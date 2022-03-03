@@ -5,82 +5,63 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Random;
-import java.util.Scanner;
+
 
 // tag::hangman-class[]
 public class Hangman {
-    private static String selectedWord;
+
 
     public static void main(String[] args) throws IOException {
-    // end::hangman-class[]
+        Player player = new Player();
+        Answer wordToGuess = pickWord(player);
+        Answer currentAnswer = start(player, wordToGuess);
+        String message = run(player, wordToGuess, currentAnswer);
+        System.out.println(message);
+    }
+
+    private static String run(Player player, Answer wordToGuess, Answer currentAnswer){
+        //Scanner inputScanner = new Scanner(System.in);
+        while (!currentAnswer.equals(wordToGuess)) {
+            String guess = player.getGuess();
+            if (player.wantsToQuit()) {
+                return "Bye!";
+            }
+        char guessedLetter = guess.charAt(0);
+        if (wordToGuess.hasLetter(guessedLetter)
+                && !currentAnswer.hasLetter(guessedLetter)) {
+            currentAnswer = wordToGuess.getHint(currentAnswer, guess.charAt(0));
+            System.out.println(currentAnswer);
+        } else {
+            player.lostChance();
+            System.out.println("Wrong! Number of guesses left: " + player.getChances());
+            if (player.hasNoChances()) {
+                return  "Sorry, you are out of guesses. The word was: " + wordToGuess;
+
+            }
+        }
+    }
+        return "That is correct! You escaped the noose .. this time.";
+        }
+
+    private static Answer start(Player player, Answer wordToGuess){
+        Answer currentAnswer = wordToGuess.generateRandomHint();
+        System.out.println("Guess the word: " + currentAnswer);
+        return currentAnswer;
+    }
+
+    private static Answer pickWord(Player player) throws IOException {
         Random random = new Random();
-        Scanner inputScanner = new Scanner(System.in);                                                  // <1>
-        // tag::numberGuesses[]
-        int numberGuesses = 5;
-        // end::numberGuesses[]
+
 
         System.out.println("Words file? [leave empty to use short_words.txt]");
-        String fileName = inputScanner.nextLine();                                                      // <2>
-        if (fileName.isBlank()) {
-            fileName = "short_words.txt";
-        }
+        String fileName = player.getWordsFile();
 
-        List<String> words = Files.readAllLines(Path.of(fileName));                                     //<3>
+        List<String> words = Files.readAllLines(Path.of(fileName));
 
-        int randomIndex = random.nextInt(words.size());                                                 //<4>
-        selectedWord = words.get(randomIndex).trim();                                                   //<5>
-
-        randomIndex = random.nextInt(selectedWord.length() - 1);                                        //<6>
-
-        String resultWord = "_".repeat(selectedWord.length());                                          //<7>
-
-        String currentAnswer = fillInChar(resultWord,                                                   //<8>
-                selectedWord.charAt(randomIndex));
-
-        System.out.println("Guess the word: " + currentAnswer);
-
-        while (!currentAnswer.equalsIgnoreCase(selectedWord)) {                                         //<9>
-            String guess = inputScanner.nextLine();                                                     //<10>
-            if (guess.equalsIgnoreCase("exit")                                                          //<11>
-                    || guess.equalsIgnoreCase("quit")) {
-                System.out.println("Bye!");
-                break;
-            }
-
-            if (selectedWord.indexOf(guess.charAt(0)) >= 0
-                    && currentAnswer.indexOf(guess.charAt(0)) < 0) {                                    //<12>
-                currentAnswer = fillInChar(currentAnswer, guess.charAt(0));
-                System.out.println(currentAnswer);
-            } else {                                                                                    //<13>
-                // tag::use-numberGuesses[]
-                numberGuesses -= 1;
-                System.out.println("Wrong! Number of guesses left: " + numberGuesses);
-                if (numberGuesses <= 0) {
-                    System.out.println("Sorry, you are out of guesses. The word was: " + selectedWord);
-                    break;
-                }
-                // end::use-numberGuesses[]
-            }
-        }
-
-        if (currentAnswer.equalsIgnoreCase(selectedWord)) {                                             //<14>
-            System.out.println("That is correct! You escaped the noose .. this time.");
-        }
+        int randomIndex = random.nextInt(words.size());
+        String randomWord = words.get(randomIndex).trim();
+        return new Answer(randomWord);
     }
 
-    private static String fillInChar(String answerWord, char guessedChar) {                             //<15>
-        // tag::string-builder[]
-        // tag::construct-string-builder[]
-        StringBuilder result = new StringBuilder();
-        // end::construct-string-builder[]
-        for (int i = 0; i < selectedWord.length(); i++) {
-            if (guessedChar == selectedWord.charAt(i)) {
-                result.append(guessedChar);
-            } else {
-                result.append(answerWord.charAt(i));
-            }
-        }
-        return result.toString();
-        // end::string-builder[]
-    }
+
 }

@@ -20,7 +20,7 @@ public class AnswerTest {
     public void checkEquality() {
         Answer a = new Answer("cat");
         Answer b = new Answer("cat");
-        assertTrue(a.equals(b));                                                                        //<1>
+        assertEquals(a, b);                                                                        //<1>
     }
 
     // end::test2[]
